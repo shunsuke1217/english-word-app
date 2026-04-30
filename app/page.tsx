@@ -2,13 +2,17 @@
 import { NextResponse } from "next/server"
 import {useState} from "react"
 import {Word} from "@/app/types/types"
+import Image from 'next/image'
 //コンポーネント
     //カード
-    const Card=({en_word="",ja_word=""}:Word)=>{
+    const Card=({en_word="",ja_word="",image=""}:Word)=>{
       return(
-        <div className="bg-gray-400 w-64 h-64 mx-auto flex items-center justify-center">
-          <h1 className="text-black">{en_word}</h1>
-          <p className="text-black">{ja_word}</p>
+        <div className="relative w-64 h-64 mx-auto flex items-center justify-center">
+          {image&&<Image src={image} fill alt="word image" className="object-cover -z-10"></Image>}
+          <div className="absolute inset-0 bg-white/25"/>
+          <h1 className="relative z-10 text-black font-bold">{en_word}</h1>
+          <p className="relative z-10 text-black">{ja_word}</p>
+          
         </div>
       )
     }
@@ -27,8 +31,21 @@ const returnJa=async(en_word:string):Promise<string>=>{
   //NextResponseのbody部分をjsオブジェクトに変換
   const resData:string=await res.json()
   return resData
-
 }
+//英単語を受け取ってroute.tsに送り、wordと画像を紐づける
+const generateImage=async(word:string):Promise<string>=>{
+  const res=await fetch("/api/chatgpt",{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json"
+    },
+    body:JSON.stringify({
+      word:word
+    })
+  })
+  return `/${word}.png`
+}
+
 export default function Home() {
 
     //英単語と日本語入力を対応させたリスト
@@ -73,7 +90,8 @@ export default function Home() {
         if(e.key==="Enter"){
           const newWord:Word={
             en_word:inputword,
-            ja_word:await returnJa(inputword)
+            ja_word:await returnJa(inputword),
+            image:await generateImage(inputword)
           }
           AddWord(newWord)
         }
@@ -85,7 +103,7 @@ export default function Home() {
     {/*移動の三角ボタンを追加する*/}
     <RightButton/>
     <LeftButton/>
-
+    
     {/*カードが０枚の時だけ特殊*/}
     <p>{page+1}/{words.length===0 ? 1 : words.length}</p>
     </>

@@ -11,7 +11,7 @@ export const POST=async(req:NextRequest):Promise<NextResponse>=>{
     const res=await fetch("https://api-free.deepl.com/v2/translate",{
         method:"POST",
         headers:{
-            Authorization:`DeepL-Auth-Key 678a9e4f-9f09-484e-9faa-9e643f43d87e:fx`,
+            Authorization:`DeepL-Auth-Key ${process.env.DEEPL_API_KEY}`,
             "Content-Type":"application/json"
         },
         body:JSON.stringify({
