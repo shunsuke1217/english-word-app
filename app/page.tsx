@@ -43,7 +43,7 @@ const generateImage=async(word:string):Promise<string>=>{
       word:word
     })
   })
-  return `/${word}.png`
+  return `/word/${word}.png`
 }
 
 export default function Home() {
@@ -66,7 +66,7 @@ export default function Home() {
     }
     //右の単語へ移動
     const right=()=>{
-      setpage(Math.min(page+1,words.length-1))
+      setpage(Math.min(page+1,words.length))
     }
 //コンポーネント
     //右ボタン
@@ -105,7 +105,7 @@ export default function Home() {
     <LeftButton/>
     
     {/*カードが０枚の時だけ特殊*/}
-    <p>{page+1}/{words.length===0 ? 1 : words.length}</p>
+    <p>{page}/{words.length}</p>
     </>
   );
 }

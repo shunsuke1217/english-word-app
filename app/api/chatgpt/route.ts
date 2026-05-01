@@ -17,6 +17,7 @@ export const POST=async(req:NextRequest):Promise<NextResponse>=>{
             prompt:`create an image that makes the word ${word} come to mind when you see it.do not include any text`,
             model:"gpt-image-1-mini",
             quality:"low",
+            n:1,
             size:"1024x1024" 
         })
 
@@ -27,7 +28,7 @@ export const POST=async(req:NextRequest):Promise<NextResponse>=>{
     const b_64Data:string=returnedData.data[0].b64_json
     //base64データをjpegに変換
     const image=Buffer.from(b_64Data,"base64")
-    fs.writeFileSync(`public/${word}.png`,image)
+    fs.writeFileSync(`public/word/${word}.png`,image)
     //returnしないとだめなのでテキトーにメッセージを返す
     return NextResponse.json({status:"202"})
 }
