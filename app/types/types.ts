@@ -2,9 +2,9 @@ export type Word={
   en_word:string,
   ja_word:string,
   image:string,
-  isSentence:boolean,
-  sentence:string,
-  sentence_image:string,
+  isSentence:boolean
+  sentence?:string,
+  sentence_image?:string,
 }
 export type ReturnText={
     translations:[{
