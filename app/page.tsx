@@ -1,11 +1,11 @@
 "use client"
 import { NextResponse } from "next/server"
 import {useState} from "react"
-import {Word} from "@/app/types/types"
+import {Sentence, Word} from "@/app/types/types"
 import Image from 'next/image'
 //コンポーネント
     //カード
-    const Card=({en_word="",ja_word="",image=""}:Pick<Word,"en_word"|"ja_word"|"image">)=>{
+    const Card=({en_word,ja_word,image}:Word)=>{
       return(
         <div className="relative w-64 h-64 mx-auto flex items-center justify-center">
           {image&&<Image src={image} fill alt="word image" className="object-cover -z-10"></Image>}
@@ -17,10 +17,10 @@ import Image from 'next/image'
       )
     }
     //例文カード
-    const SentenceCard=({sentence,sentence_image}:Pick<Word,"sentence"|"sentence_image">)=>{
+    const SentenceCard=({sentence,sentenceImage}:Sentence)=>{
       return(
         <div className="relative w-64 h-64 mx-auto flex items-center justify-center">
-          {sentence_image && <Image src={sentence_image} fill alt="word image" className="object-cover -z-10"></Image>}
+          {sentenceImage && <Image src={sentenceImage} fill alt="word image" className="object-cover -z-10"></Image>}
           <div className="absolute inset-0 bg-white/25"/>
           <h1 className="relative z-10 text-black font-bold">{sentence}</h1>
         </div>
@@ -45,7 +45,7 @@ const returnJa=async(en_word:string):Promise<string>=>{
   return resData
 }
 
-//英単語を受け取ってroute.tsに送り、wordと画像を紐づける
+//英単語を受け取ってroute.tsに送り、wordの画像のpathを返す
 const generateImage=async(word:string):Promise<string>=>{
   const res=await fetch("/api/chatgpt",{
     method:"POST",
@@ -56,11 +56,11 @@ const generateImage=async(word:string):Promise<string>=>{
       word:word
     })
   })
-  return `/word/${word}.png`
+  return res.json()
 }
 
 //例文生成関数
-const generateSentence=async({en_word,ja_word}:Word):Promise<Pick<Word,"sentence"|"sentence_image">>=>{
+const generateSentence=async({en_word,ja_word}:Word):Promise<Pick<Sentence,"sentence"|"sentenceImage">>=>{
   const res=await fetch("/api/sentence",{
     method:"POST",
     headers:{
@@ -71,7 +71,7 @@ const generateSentence=async({en_word,ja_word}:Word):Promise<Pick<Word,"sentence
       ja_word:ja_word
     })
   })
-  const ans:Pick<Word,"sentence"|"sentence_image">=await res.json()
+  const ans:Pick<Sentence,"sentence"|"sentenceImage">=await res.json()
   return ans
 }
 
@@ -85,11 +85,16 @@ export default function Home() {
     const [inputword,setInputWord]=useState<string>("")
     //応急処置用のstate あとで消す
     const [dummy,setDummy]=useState<number>(0)
+    const [sentences,setSentence]=useState<Sentence[]>([])
 //ロジック
     //入力された英語を受け取ってWordsetsに入れる関数
-    const AddWord=(word:Word)=>{
+    const addWord=(word:Word)=>{
       setWorld([...words,word])
       setInputWord("")
+    }
+    //完成したsentenceをsentencesに追加
+    const addSentence=(sentence:Sentence)=>{
+      setSentence([...sentences,sentence])
     }
     //左の単語へ移動
     const left=()=>{
@@ -119,20 +124,28 @@ export default function Home() {
     onKeyDown={
       async(e:React.KeyboardEvent<HTMLInputElement>)=>{
         if(e.key==="Enter"){
+          //wordsが空の場合、前の要素を見てidを変えることができないため、場合分けが必要
+          let newId=0
+          //もしwordsの前の要素が存在しているなら,それのidの一つ後に設定
+          if(words[page]){
+            newId=words[words.length-1].id+1
+          }
           const newWord:Word={
+            //idの更新はwordの個数がidと一致しないため、newWordの一番後ろの単語のidを見る必要がある
+            id:newId,
             en_word:inputword,
             ja_word:await returnJa(inputword),
             image:await generateImage(inputword),
-            isSentence:false
+            isSentence:false,
           }
-          AddWord(newWord)
+          addWord(newWord)
         }
       }}
     />
 
     {/*レンダリング*/}
-    <Card {...words[page]}/>
-    {words[page]?.isSentence && <SentenceCard sentence={words[page].sentence} sentence_image={words[page].sentence_image}/>}
+    {words[page]&&<Card {...words[page]}/>}
+    {words[page]?.isSentence && <SentenceCard {...sentences[page]}/>}
 
 
     {/*移動の三角ボタンを追加する*/}
@@ -147,19 +160,18 @@ export default function Home() {
     onClick={
       async()=>{
         if(!words[page].isSentence){
-          const sentendeDatas=await generateSentence(words[page])
+          const sentenceData=await generateSentence(words[page])
           words[page].isSentence=true
-          words[page].sentence=sentendeDatas.sentence
-          words[page].sentence_image=sentendeDatas.sentence_image
-          setDummy((prev)=>prev+1)
-
+          //同じpageにあるwordに対しての例文を作るのだから、words[page]のid要素にアクセスすればいい
+          const newSentence:Sentence={id:words[page].id,sentence:sentenceData.sentence,sentenceImage:sentenceData.sentenceImage}
+          addSentence(newSentence)
         }else{
         console.log("作成済み")
         }
       } 
     }
     type="button"
-    className="bg-white text-black"
+    className="bg-white text-black cursor-pointer"
     >例文作成</button>
     </>
   );

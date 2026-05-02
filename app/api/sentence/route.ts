@@ -1,5 +1,5 @@
 import { NextRequest,NextResponse } from "next/server";
-import { Word } from "@/app/types/types";
+import { Word,Sentence } from "@/app/types/types";
 import OpenAI from "openai";
 import * as z from "zod"
 import fs from "fs"
@@ -16,7 +16,7 @@ export const POST=async(req:NextRequest):Promise<NextResponse>=>{
     //en_wordとja_wordを使って例文を作るように指示するプロンプトをOpenAiAPIに送る
     const res=await openai.responses.create(
         {
-            model:"gpt-4.1-mini",
+            model:"gpt-5-nano",
             input:` Using "${en_word}" as the Japanese meaning “${ja_word}” ,create an example sentence in English.And 
             create an image illustrating the example sentence. Do not include any text in the image.`,
             text:{
@@ -56,6 +56,6 @@ export const POST=async(req:NextRequest):Promise<NextResponse>=>{
     const sentenceJson=JSON.parse(res.output_text)
     const sentence=sentenceJson.sentence
     
-    const ans:Pick<Word,"sentence"|"sentence_image">={sentence:sentence,sentence_image:`/sentence/${en_word}.webp`}
+    const ans:Pick<Sentence,"sentence"|"sentenceImage">={sentence:sentence,sentenceImage:`/sentence/${en_word}.webp`}
     return NextResponse.json(ans)
 }

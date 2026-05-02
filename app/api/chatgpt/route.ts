@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import { BaseNextResponse } from "next/dist/server/base-http";
 
-//英単語を送ってイメージ画像をpublicディrクトリにつくる
+//英単語を送ってイメージ画像をpublicディレクトリにつくる
 export const POST=async(req:NextRequest):Promise<NextResponse>=>{
     //NextRequestのbody部分を取得
     const {word}:{word:string}=await req.json()
@@ -29,6 +29,6 @@ export const POST=async(req:NextRequest):Promise<NextResponse>=>{
     //base64データをjpegに変換
     const image=Buffer.from(b_64Data,"base64")
     fs.writeFileSync(`public/word/${word}.png`,image)
-    //returnしないとだめなのでテキトーにメッセージを返す
-    return NextResponse.json({status:"202"})
+    //returnしないとだめなのでpathを返す
+    return NextResponse.json(`/word/${word}.png`)
 }
