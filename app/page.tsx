@@ -7,9 +7,12 @@ import { insertWord,getData,delWordData, insertSentence } from "./features/db/ta
 import { Database } from "./types/db_types"
 import { SupabaseClient } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/client"
-import {uploadImage,getFromStrage } from "./features/db/bucket"
+import {uploadImage } from "./features/db/bucket"
+import { getFromStrage } from "./features/db/bucket_sa"
 import { Buffer } from "buffer"
 import Link from "next/link"
+import { set } from "zod"
+import { id } from "zod/locales"
 
 //コンポーネント
 
@@ -19,14 +22,12 @@ import Link from "next/link"
     // →前のCardと比較してimageが変わったためレンダリングされた後にuseEffectも実行→urlが変わるためさいレンダリング→Cardの描画が変わる
     const Card=({en_word,ja_word,image}:Word)=>{
       //urlを変更したら再レンダリング（return以下）をもう一度してほしいからurlはstateにしておく必要あり
-      const [url,setUrl]=useState<string>("")
+      const [url,setUrl]=useState<string|null>("")
       //初回レンダリング、それ以降はimageが変わるたびにuseEffectを実行
       useEffect(()=>{
         const func=async()=>{
-        const data=await getFromStrage(image)
-        if(data){
-          setUrl(data.publicUrl)
-        }
+        const url=await getFromStrage(image)
+        setUrl(url)
       }
     func()
   },[image])
@@ -43,15 +44,12 @@ import Link from "next/link"
 
     //例文カード
     const SentenceCard=({sentence,sentenceImage}:Sentence)=>{
-      const [url,setUrl]=useState<string>("")
-      console.log(sentenceImage)
+      const [url,setUrl]=useState<string|null>("")
       //初回レンダリング、それ以降はimageが変わるたびにuseEffectを実行
       useEffect(()=>{
         const func=async()=>{
-        const data=await getFromStrage(sentenceImage)
-        if(data){
-          setUrl(data.publicUrl)
-        }
+        const url=await getFromStrage(sentenceImage)
+        setUrl(url)
       }
     func()
   },[sentenceImage])
@@ -63,7 +61,7 @@ import Link from "next/link"
         </div>
       )
     }
-
+    
     const UserName=()=>{
       const [name,setName]=useState("")
       useEffect(()=>{
@@ -79,7 +77,6 @@ import Link from "next/link"
         }
         func()
       },[])
-      console.log(name)
       return <p>{name}</p>
     }
     
@@ -104,7 +101,7 @@ const returnJa=async(en_word:string):Promise<string>=>{
 //Wordの画像生成関数
 //input:英単語
 //output:bucket内の画像のpath 
-//apiで画像を生成→buffer形式でbucketに保存→pathを返す
+//apiで画像を生成→pathを受け取る→pathを返す
 const generateImage=async(word:string):Promise<string|null>=>{
   try{
     const res=await fetch("/api/get_word_image",{
@@ -116,24 +113,17 @@ const generateImage=async(word:string):Promise<string|null>=>{
       word:word
     })
   })
-  //bufferを受け取る→bucketに保存→そのpathを返す
-  if(res){
-    const buffer:Buffer=await res.json()
-    const pathDatas=await uploadImage(buffer,"word_image",word)
-    if(!pathDatas){
-      throw new Error("画像pathを取得できませんでした")
-    }else{
-      return pathDatas.path
-    }
-    }
+  //そのpathを返す
+  const {path}=await res.json()
+  if(path){
+    return path
+  }
   else{
-    throw new Error("画像pathを取得できませんでした")
+    throw new Error("pathを取得できませんでした")
   }
   }catch{
     return null
   }
-  
-  
   
 }
 
@@ -155,46 +145,42 @@ const generateSentence=async({id,en_word,ja_word}:Word):Promise<Sentence | null>
   })
 
   //resから例文と例文の画像を受け取る
-  const ans:{sentence:string,sentenceImage:Buffer<ArrayBufferLike>|null}=await res.json()
-  //例文画像をbucketに保存
-  if(ans.sentenceImage){
-    const pathDatas=await uploadImage(ans.sentenceImage,"sentence_image",en_word)
-    if(pathDatas){
-      const return_sentence:Sentence={id:id,sentence:ans.sentence,sentenceImage:pathDatas.path}
-      return return_sentence
-    }else{
-      throw new Error("uploadできませんでした")
-    }
-  }else{
-    throw new Error("pathが返されませんでした")
-  }
-  }catch(error){
-    console.log(error)
-    return null
-  }
+  const {sentence,path}=await res.json()
+  //sentenceへの変換
+  const return_sentence:Sentence={id:id,sentence:sentence,sentenceImage:path}
+  return return_sentence
+}
+catch(error){
+  console.log(`error: ${error}`)
+  return null
+}
 }
 
 export default function Home() {
     
     //英単語と日本語入力を対応させたリスト
-    const [words,setWord]=useState<Word[]>([])
+    const [words,setWord]=useState<(Word|null)[]>([])
     //今の単語カードのページ
     const [page,setpage]=useState<number>(0)
     //入力欄の文字列
     const [inputword,setInputWord]=useState<string>("")
 
-    const [sentences,setSentence]=useState<Sentence[]>([])
+    const [sentences,setSentence]=useState<(Sentence|null)[]>([])
 
     //supabaseClientの定義
     const supabase=createClient()
     
+    const reibunDummy={id:0,sentence:"this word dont have a sentence",sentenceImage:""}
     //最初のレンダリングだけ行う処理
     useEffect(()=>{
       const initiateWordList=async()=>{
         const allData=await getData()
+        console.log(allData)
         if(allData){
-          setWord(allData.words)
-          setSentence(allData.sentences)
+          setWord([null,...allData.words])
+          setSentence([null,...allData.sentences])
+          //ページが読めたら、１ページ目に移動
+          setpage(1)
         }
       }
       initiateWordList()
@@ -205,11 +191,16 @@ export default function Home() {
       try{
         const newWord=await insertWord(word)
         if(newWord){
-          setWord([...words,newWord])
+          //words[0]を空欄にする
+          if(words.length===0){
+            setWord([null,newWord])
+          }else{
+            setWord([...words,newWord])
+          }
           setInputWord("")}
-        else{
-          throw new Error("newWordを取得できませんでした")
-        }
+      else{
+        throw new Error("newWordを取得できませんでした")
+      }
       }
       catch(error){
         console.log(error)
@@ -220,21 +211,36 @@ export default function Home() {
       try{
         const newSentence=await insertSentence(sentence)
         if(newSentence){
-          setSentence([...sentences,newSentence])
-        }else{
+          if(sentences.length===0){
+            setSentence([null,newSentence])
+          }else{
+            setSentence([...sentences,newSentence])
+        }}else{
           throw new Error("newSentenceを取得できませんでした")
         }
       }catch(error){
         console.log(error)
       }
     }
+    
+    //wordを指定してそれとあったsentnceを返す関数
+    const findSentence=(word:Word|null):Sentence=>{
+      const sentence=sentences.find((sentence)=>sentence?.id===word?.id)
+      if(sentence){
+        return sentence
+      }else{
+        console.log("sentenceが見つかりませんでした")
+        return reibunDummy
+      }
+    } 
+
     //左の単語へ移動
     const left=()=>{
-      setpage(Math.max(0,page-1))
+      setpage(Math.max(words.length===0 ? 0 : 1,page-1))
     }
     //右の単語へ移動
     const right=()=>{
-      setpage(Math.min(page+1,words.length))
+      setpage(Math.min(page+1,words.length===0 ? 0 : words.length-1))
     }
 
 
@@ -256,10 +262,12 @@ export default function Home() {
       onClick={()=>{
         delWordData(supabase,delID)
         //消去したword以外のwordで新しく配列を作り、setWord
-        setWord((prevWords)=>prevWords.filter((value)=>value.id!==delID))
+        setWord((prevWords)=>prevWords.filter((value)=>value?.id!==delID))
         //消去したwordのidと結びついているsentence以外の要素で新しくsentencesを作成
-        setSentence((prevSentences)=>prevSentences.filter((value)=>value.id!==delID))
+        setSentence((prevSentences)=>prevSentences.filter((value)=> value?.id!==delID))
       }}>del</button>
+      }else{
+        console.log("削除不可")
       }
     }
       
@@ -283,7 +291,7 @@ export default function Home() {
           console.log(newWord)
           addWord(newWord)
           //新しいwordを追加したらそのページに飛ぶ
-          setpage(words.length)
+          setpage(words.length-1)
           }else{
             console.log("新しくwordを作れませんでした")
           }
@@ -293,14 +301,15 @@ export default function Home() {
 
     {/*レンダリング*/}
     {words[page]&&<Card {...words[page]}/>}
-    {words[page]?.isSentence && <SentenceCard {...sentences[page]}/>}
+    {page!==0&&<SentenceCard {...findSentence(words[page])}/>}
 
 
     {/*移動の三角ボタンを追加する*/}
     <RightButton/>
     <LeftButton/>
     
-    <p>{page}/{words.length}</p>
+    <p>{page}/{words.length===0 ? 0 : words.length-1}</p>
+    {console.log("length",words.length,"page:",page,"sentencelist",sentences)}
 
     {/*削除ボタン*/}
     <DelButton/>
@@ -308,7 +317,7 @@ export default function Home() {
     <button 
     onClick={
       async()=>{
-        if(!words[page].isSentence){
+        if(words[page]&&!(words[page]?.isSentence)){
           const newSentence:Sentence|null=await generateSentence(words[page])
           console.log(newSentence)//null
           if(newSentence){
@@ -338,3 +347,4 @@ export default function Home() {
     
   );
 }
+ 

@@ -4,6 +4,8 @@ import fs from "fs";
 import { BaseNextResponse } from "next/dist/server/base-http";
 import { uploadImage } from "@/app/features/db/bucket";
 //英単語を送る→画像（buffer形式）を返す
+//bufferやimgファイルをServerActionの関数の引数に設定するとエラー。よって画像を作った時にDBに渡すしかない
+//生成した画像をbucketに保存して、保存した場所のpathを返す（page.tsxをサーバーrenderにすればpage.tsxでDBに送ることが可能になるため、将来はそっちでやりたい）
 export const POST=async(req:NextRequest)=>{
     //NextRequestのbody部分を取得
     const {word}:{word:string}=await req.json()
@@ -30,7 +32,8 @@ export const POST=async(req:NextRequest)=>{
     const buffer=Buffer.from(b_64Data,"base64")
     
     if(buffer){
-        return NextResponse.json(buffer)
+        const path=await uploadImage(buffer,"word_image",word)
+        return NextResponse.json({path: path?.path })
     }else{
         return null
     }

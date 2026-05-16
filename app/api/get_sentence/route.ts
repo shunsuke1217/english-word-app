@@ -3,7 +3,7 @@ import { Word,Sentence } from "@/app/types/types";
 import OpenAI from "openai";
 import * as z from "zod"
 import fs from "fs"
-import { uploadImage } from "@/app/features/db/bucket";
+import { uploadImage} from "@/app/features/db/bucket";
 import { CreatedImage } from "@/app/types/types";
 const openai=new OpenAI()
 //返り値の構造(JSONschema)
@@ -43,18 +43,20 @@ export const POST=async(req:NextRequest):Promise<NextResponse>=>{
 
         }
     )
-    //ここからbase64データの後処理
-    const datasetForImage=res.output.find((element)=>element.type==="image_generation_call")
-    let buffer:Buffer|null=null
-    if(datasetForImage?.result){
-            //画像受け取れなかった時のエラー処理が必要
-            const imageData=datasetForImage.result
-            buffer=Buffer.from(imageData,"base64")//画像のバイナリデータに変換
-        }
+
     //ここから例文の後処理
     const sentenceJson=JSON.parse(res.output_text)//JSON→jsオブジェクト
     const sentence=sentenceJson.sentence
-    //bufferとsentenceをpage.tsxに返す
-    const ans={sentence:sentence,buffer:buffer}
-    return NextResponse.json(ans)
+    //ここからbase64データの後処理
+    const datasetForImage=res.output.find((element)=>element.type==="image_generation_call")
+    if(datasetForImage?.result){
+            //画像受け取れなかった時のエラー処理が必要
+            const imageData=datasetForImage.result
+            const buffer=Buffer.from(imageData,"base64")//画像のバイナリデータに変換
+            const path=await uploadImage(buffer,"sentence_image",en_word)
+            //画像のURL,path,sentence全てResponseで返す
+            return NextResponse.json({sentence:sentence,path:path?.path})
+        }
+    //datasetFroImageがnullの時のエラー処理
+    return NextResponse.json(null)
 }
