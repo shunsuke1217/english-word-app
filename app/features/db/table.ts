@@ -1,0 +1,96 @@
+"use server"
+import { Word ,Sentence} from "@/app/types/types";
+import { createClient } from "@/lib/supabase/server";
+import { SupabaseClient } from "@supabase/supabase-js";
+import { Database } from "@/app/types/db_types"; 
+import { error } from "console";
+import { create } from "domain";
+//要型注釈
+
+//全wordとそれと紐づくsentenceを取りだして返す
+export const getData=async():Promise<{words:Word[],sentences:Sentence[]}|null>=>{
+    const supabase:SupabaseClient<Database>=await createClient()
+    try{
+    const {data}=await supabase
+    .from("word_list")
+    .select("*,sentence_list(*)")
+    .order("id",{ascending:true})
+    let words:Word[]=[]
+    let sentences:Sentence[]=[]
+    if(data){
+        data.map((element)=>{
+            if(element){
+                words.push(element)
+                if(element.sentence_list){
+                    sentences.push(element.sentence_list)
+                    console.log(element.sentence_list)
+                }
+            } 
+        })
+    }
+    return {"words":words,"sentences":sentences}
+    }
+    catch(error){
+        console.log(error)
+        return null
+    }
+}
+
+
+
+
+//Word型をtableに追加。追加したWordを返す
+export const insertWord=async(word:Pick<Word,"en_word"|"ja_word"|"image">):Promise<Word|null>=>{
+    const supabase:SupabaseClient<Database>=await createClient()
+    try{
+    const {data}=await supabase
+    .from("word_list")
+    .insert({
+        en_word:word.en_word,
+        ja_word:word.ja_word,
+        image:word.image,
+        isSentence:false
+    })
+    .select()
+    .single()
+    if(data){
+        return data
+    }else{
+        throw new Error("データ取得に失敗しました")
+    }}
+    catch(error){
+        console.log(error)
+        return null
+    }
+}
+//Sentenceをtableに追加。追加したデータSentenceを返す
+export const insertSentence=async(sentence:Pick<Sentence,"id"|"sentence"|"sentenceImage">):Promise<Sentence|null>=>{
+    const supabase:SupabaseClient<Database>=await createClient()
+    try{
+    const {data}=await supabase
+    .from("sentence_list")
+    .insert({
+        id:sentence.id,
+        sentence:sentence.sentence,
+        sentenceImage:sentence.sentenceImage,
+    })
+    .select()
+    .single()
+    if(data){
+        return data
+    }else{
+        throw new Error("データ取得に失敗しました")
+    }}
+    catch(error){
+        console.log(error)
+        return null
+    }
+}
+
+//IDを指定して削除
+export const delWordData=async(supabase:SupabaseClient<Database>,ID:number):Promise<void>=>{
+    await supabase
+    .from("word_list")
+    .delete()
+    .eq("id",ID)
+}

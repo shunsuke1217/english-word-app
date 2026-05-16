@@ -3,6 +3,8 @@ import { Word,Sentence } from "@/app/types/types";
 import OpenAI from "openai";
 import * as z from "zod"
 import fs from "fs"
+import { uploadImage } from "@/app/features/db/bucket";
+import { CreatedImage } from "@/app/types/types";
 const openai=new OpenAI()
 //返り値の構造(JSONschema)
 const ReturnSchema=z.object({
@@ -41,21 +43,18 @@ export const POST=async(req:NextRequest):Promise<NextResponse>=>{
 
         }
     )
-    console.log(res)
     //ここからbase64データの後処理
-    let imageData:string
-    let buffer
     const datasetForImage=res.output.find((element)=>element.type==="image_generation_call")
+    let buffer:Buffer|null=null
     if(datasetForImage?.result){
             //画像受け取れなかった時のエラー処理が必要
-            imageData=datasetForImage.result
+            const imageData=datasetForImage.result
             buffer=Buffer.from(imageData,"base64")//画像のバイナリデータに変換
-            fs.writeFileSync(`public/sentence/${en_word}.webp`,buffer)//生成したバイナリデータを画像ファイルに書き込む
         }
     //ここから例文の後処理
-    const sentenceJson=JSON.parse(res.output_text)
+    const sentenceJson=JSON.parse(res.output_text)//JSON→jsオブジェクト
     const sentence=sentenceJson.sentence
-    
-    const ans:Pick<Sentence,"sentence"|"sentenceImage">={sentence:sentence,sentenceImage:`/sentence/${en_word}.webp`}
+    //bufferとsentenceをpage.tsxに返す
+    const ans={sentence:sentence,buffer:buffer}
     return NextResponse.json(ans)
 }
