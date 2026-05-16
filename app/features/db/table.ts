@@ -5,6 +5,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { Database } from "@/app/types/db_types"; 
 import { error } from "console";
 import { create } from "domain";
+import { deleteImage } from "@/app/features/db/bucket";
 //要型注釈
 
 //全wordとそれと紐づくsentenceを取りだして返す
@@ -87,10 +88,49 @@ export const insertSentence=async(sentence:Pick<Sentence,"id"|"sentence"|"senten
     }
 }
 
-//IDを指定して削除
-export const delWordData=async(supabase:SupabaseClient<Database>,ID:number):Promise<void>=>{
-    await supabase
-    .from("word_list")
-    .delete()
-    .eq("id",ID)
+//IDを指定して削除(このとき画像も削除する)
+export const delWordData=async(ID:number,wordImage:string,sentenceImage:string|null):Promise<boolean>=>{
+    try{
+        const supabase=await createClient()
+        //画像削除
+        //sentence画像がない可能性がある
+        if(sentenceImage){
+            const deleteSentenceImage=await deleteImage(sentenceImage)
+            if(!deleteSentenceImage){
+                throw new Error("例文画像の削除に失敗しました")
+            }
+        }
+        const deleteWordImage=await deleteImage(wordImage)
+        if(!deleteWordImage){
+            throw new Error("画像の削除に失敗しました")
+        }else{
+            await supabase
+            .from("word_list")
+            .delete()
+            .eq("id",ID)
+        }
+        return true
+        
+    }catch(error){
+        console.log(error)
+        return false
+    }
+}
+
+//例文を作った時にDB側のisSentenceをtrueにする
+export const isSentenceTrue=async(id:number):Promise<Word|null>=>{
+    try{
+        const supabase=await createClient()
+        const {data,error}=await supabase
+        .from("word_list")
+        .update({isSentence:true})
+        .eq("id",id)
+        .select()
+        if(data){return data[0]}
+        else{throw new Error("isSentenceTrueの更新に失敗しました")}
+    }catch(error){
+        console.log(error,"isSentenceTrueの更新に失敗")
+        return null
+    }
+    
 }

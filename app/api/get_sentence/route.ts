@@ -11,8 +11,8 @@ const ReturnSchema=z.object({
     sentence:z.string(),
 })
 
-export const POST=async(req:NextRequest):Promise<NextResponse>=>{
-
+export const POST=async(req:NextRequest):Promise<NextResponse<{sentence:string,path:string}|null>>=>{
+try{
     const {en_word,ja_word}=await req.json() as Pick<Word,"en_word"|"ja_word">
     
     //en_wordとja_wordを使って例文を作るように指示するプロンプトをOpenAiAPIに送る
@@ -44,19 +44,22 @@ export const POST=async(req:NextRequest):Promise<NextResponse>=>{
         }
     )
 
+    //res返却後の処理
     //ここから例文の後処理
     const sentenceJson=JSON.parse(res.output_text)//JSON→jsオブジェクト
     const sentence=sentenceJson.sentence
     //ここからbase64データの後処理
     const datasetForImage=res.output.find((element)=>element.type==="image_generation_call")
-    if(datasetForImage?.result){
-            //画像受け取れなかった時のエラー処理が必要
-            const imageData=datasetForImage.result
-            const buffer=Buffer.from(imageData,"base64")//画像のバイナリデータに変換
-            const path=await uploadImage(buffer,"sentence_image",en_word)
-            //画像のURL,path,sentence全てResponseで返す
-            return NextResponse.json({sentence:sentence,path:path?.path})
-        }
+    if(!datasetForImage || !datasetForImage.result)throw new Error("画像生成のデータが見つかりませんでした")
+    const imageData=datasetForImage.result
+    const buffer=Buffer.from(imageData,"base64")//画像のバイナリデータに変換
+    const path=await uploadImage(buffer,"sentence_image",en_word)
+    if(!path)throw new Error("画像のアップロードに失敗しました")
+    //画像のURL,path,sentence全てResponseで返す
+    return NextResponse.json({sentence:sentence,path:path.path})
+}catch(error){
+    console.log(error)
     //datasetFroImageがnullの時のエラー処理
     return NextResponse.json(null)
+}
 }

@@ -11,7 +11,8 @@ const signUpNewUser = async (email: string, password: string,user_name:string) =
     email:email,
     password:password,
     options: {
-      emailRedirectTo: 'localhost:3000/auth/confirm',
+      //メールのリンクのリダイレクト先　今はクエリでnext設定していない
+      emailRedirectTo: 'localhost:3000/auth/route',
       data:{
         user_name:user_name,
       }
@@ -58,7 +59,8 @@ export default function LoginPage() {
     const { error } = await signUpNewUser(email, password,user_name)
     setIsLoading(false)
     if (!error) {
-      router.push('/')
+      //初めての人が入力後、すぐに飛ぶ場所
+      router.push('/auth/confirm')
     } else {
       console.log("error", error.message)
     }

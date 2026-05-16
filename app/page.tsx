@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import {useState,useEffect, useEffectEvent} from "react"
 import {Sentence, Word} from "@/app/types/types"
 import Image from 'next/image'
-import { insertWord,getData,delWordData, insertSentence } from "./features/db/table"
+import { insertWord,getData,delWordData, insertSentence, isSentenceTrue } from "./features/db/table"
 import { Database } from "./types/db_types"
 import { SupabaseClient } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/client"
@@ -145,9 +145,13 @@ const generateSentence=async({id,en_word,ja_word}:Word):Promise<Sentence | null>
   })
 
   //resから例文と例文の画像を受け取る
-  const {sentence,path}=await res.json()
+  const data:{sentence:string,path:string}|null=await res.json()
+  if(!data)throw new Error("例文のデータを取得できませんでした")
+  //dataが取得できた→例文作成完了→isSentenceをtrueにする
+  const returnWord=await isSentenceTrue(id)
+  if(!returnWord)throw new Error("isSentenceの更新に失敗しました")
   //sentenceへの変換
-  const return_sentence:Sentence={id:id,sentence:sentence,sentenceImage:path}
+  const return_sentence:Sentence={id:id,sentence:data.sentence,sentenceImage:data.path}
   return return_sentence
 }
 catch(error){
@@ -240,7 +244,7 @@ export default function Home() {
     }
     //右の単語へ移動
     const right=()=>{
-      setpage(Math.min(page+1,words.length===0 ? 0 : words.length-1))
+      setpage(Math.min(page+1,words.length===1 ? 1 : words.length-1))
     }
 
 
@@ -257,14 +261,14 @@ export default function Home() {
     const DelButton=()=>{
       //削除よていのwordのIDを保存
       if(words[page]){
-        const delID=words[page].id
-      return <button
-      onClick={()=>{
-        delWordData(supabase,delID)
+        const word=words[page]
+        return <button
+        onClick={()=>{
+        delWordData(word.id,word.image,findSentence(word).sentenceImage??"" )
         //消去したword以外のwordで新しく配列を作り、setWord
-        setWord((prevWords)=>prevWords.filter((value)=>value?.id!==delID))
+        setWord((prevWords)=>prevWords.filter((value)=>value?.id!==word.id))
         //消去したwordのidと結びついているsentence以外の要素で新しくsentencesを作成
-        setSentence((prevSentences)=>prevSentences.filter((value)=> value?.id!==delID))
+        setSentence((prevSentences)=>prevSentences.filter((value)=> value?.id!==word.id))
       }}>del</button>
       }else{
         console.log("削除不可")
@@ -288,10 +292,11 @@ export default function Home() {
             ja_word:await returnJa(inputword),
             image:image_path,
           }
-          console.log(newWord)
-          addWord(newWord)
+          console.log("addWord開始")
+          await addWord(newWord)
           //新しいwordを追加したらそのページに飛ぶ
-          setpage(words.length-1)
+          //ここでsetpage(words.length-1)をするとaddWordの処理の前の状態が反映される（stateを新しく設定しても再レンダリングされるまでstateは同じものを扱うため）
+          setpage(words.length)
           }else{
             console.log("新しくwordを作れませんでした")
           }
@@ -308,9 +313,9 @@ export default function Home() {
     <RightButton/>
     <LeftButton/>
     
-    <p>{page}/{words.length===0 ? 0 : words.length-1}</p>
+    <p>{page}/{words.length===1 ? 1 : words.length-1}</p>
     {console.log("length",words.length,"page:",page,"sentencelist",sentences)}
-
+    
     {/*削除ボタン*/}
     <DelButton/>
     {/*例文生成ボタン */}
@@ -319,10 +324,10 @@ export default function Home() {
       async()=>{
         if(words[page]&&!(words[page]?.isSentence)){
           const newSentence:Sentence|null=await generateSentence(words[page])
-          console.log(newSentence)//null
+          console.log(newSentence)
           if(newSentence){
             words[page].isSentence=true
-            addSentence(newSentence)
+            await addSentence(newSentence)
           }else{
             console.log("newSentenceデータを作れませんでした")
           }
