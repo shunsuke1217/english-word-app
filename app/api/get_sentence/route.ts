@@ -5,6 +5,7 @@ import * as z from "zod"
 import fs from "fs"
 import { uploadImage} from "@/app/features/db/bucket";
 import { CreatedImage } from "@/app/types/types";
+import { insertSentence } from "@/app/features/db/table";
 const openai=new OpenAI()
 //返り値の構造(JSONschema)
 const ReturnSchema=z.object({
@@ -13,7 +14,7 @@ const ReturnSchema=z.object({
 
 export const POST=async(req:NextRequest):Promise<NextResponse<{sentence:string,path:string}|null>>=>{
 try{
-    const {en_word,ja_word}=await req.json() as Pick<Word,"en_word"|"ja_word">
+    const {en_word,ja_word,id}=await req.json() as Pick<Word,"en_word"|"ja_word"|"id">
     
     //en_wordとja_wordを使って例文を作るように指示するプロンプトをOpenAiAPIに送る
     const res=await openai.responses.create(
@@ -48,6 +49,7 @@ try{
     //ここから例文の後処理
     const sentenceJson=JSON.parse(res.output_text)//JSON→jsオブジェクト
     const sentence=sentenceJson.sentence
+    console.log(sentence)
     //ここからbase64データの後処理
     const datasetForImage=res.output.find((element)=>element.type==="image_generation_call")
     if(!datasetForImage || !datasetForImage.result)throw new Error("画像生成のデータが見つかりませんでした")

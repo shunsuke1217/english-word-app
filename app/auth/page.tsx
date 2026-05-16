@@ -3,23 +3,10 @@
 import { createClient } from '@/lib/supabase/client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-
+import Link from 'next/link';
 const supabase = createClient();
 
-const signUpNewUser = async (email: string, password: string,user_name:string) => {
-  const { data, error } = await supabase.auth.signUp({
-    email:email,
-    password:password,
-    options: {
-      //メールのリンクのリダイレクト先　今はクエリでnext設定していない
-      emailRedirectTo: 'localhost:3000/auth/route',
-      data:{
-        user_name:user_name,
-      }
-    },
-  })
-  return {data,error}
-}
+
 
 const signInWithEmail = async (email: string, password: string) => {
   const { data, error } = await supabase.auth.signInWithPassword({
@@ -53,18 +40,6 @@ export default function LoginPage() {
     }
   }
 
-  const handleSignUp = async (e: React.SubmitEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setIsLoading(true)
-    const { error } = await signUpNewUser(email, password,user_name)
-    setIsLoading(false)
-    if (!error) {
-      //初めての人が入力後、すぐに飛ぶ場所
-      router.push('/auth/confirm')
-    } else {
-      console.log("error", error.message)
-    }
-  }
 
   return (
     <div>
@@ -77,17 +52,11 @@ export default function LoginPage() {
           {isLoading ? 'Logging in...' : 'Login'}
         </button>
       </form>
-      <h1>初めての方</h1>
-      <form onSubmit={handleSignUp}>
-        <input type="text" placeholder="email" onChange={(e) => setEmail(e.target.value)} />
-        <input type="password" placeholder="Password" onChange={(e) => setPassword(e.target.value)} />
-        <input type="text" placeholder="User Name" onChange={(e) => setUser_name(e.target.value)} />
-        <button type="submit" disabled={isLoading}>
-          {isLoading ? 'Signing up...' : 'Sign Up'}
-        </button>
-      </form>
+      <h1>初めての方は<Link href="/auth/biginner">こちら</Link>から</h1>
+      
       <button 
       onClick={handleSignOut}>サインアウト</button>
+      <Link href="/">ホームへ</Link>
     </div>
   );
 }

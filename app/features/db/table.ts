@@ -101,6 +101,7 @@ export const delWordData=async(ID:number,wordImage:string,sentenceImage:string|n
             }
         }
         const deleteWordImage=await deleteImage(wordImage)
+
         if(!deleteWordImage){
             throw new Error("画像の削除に失敗しました")
         }else{

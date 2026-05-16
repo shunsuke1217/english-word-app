@@ -1,24 +1,12 @@
 'use client'
 
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
-import { useState,useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 
-const client = createClient()
 
 const Home=()=>{
-    const [userEmail, setUserEmail] = useState<string|null>('')
-    useEffect(()=>{
-        const func=async()=>{
-            const {data,error}=await client.auth.getUser()
-            if(data.user?.email){
-                setUserEmail(data.user.email)
-            }else{
-                console.log(error)
-            }
-        }
-        func()
-    },[])
+    const searchParams = useSearchParams()
+    const userEmail=searchParams.get("email") || ""
     return(
         <>
             <h1>登録完了</h1>

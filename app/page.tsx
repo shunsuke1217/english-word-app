@@ -139,6 +139,7 @@ const generateSentence=async({id,en_word,ja_word}:Word):Promise<Sentence | null>
       "Content-Type":"application/json"
     },
     body:JSON.stringify({
+      id:id,
       en_word:en_word,
       ja_word:ja_word
     })
@@ -146,6 +147,7 @@ const generateSentence=async({id,en_word,ja_word}:Word):Promise<Sentence | null>
 
   //resから例文と例文の画像を受け取る
   const data:{sentence:string,path:string}|null=await res.json()
+  console.log(data?.sentence)
   if(!data)throw new Error("例文のデータを取得できませんでした")
   //dataが取得できた→例文作成完了→isSentenceをtrueにする
   const returnWord=await isSentenceTrue(id)
@@ -323,6 +325,7 @@ export default function Home() {
     onClick={
       async()=>{
         if(words[page]&&!(words[page]?.isSentence)){
+          console.log("例文生成開始")
           const newSentence:Sentence|null=await generateSentence(words[page])
           console.log(newSentence)
           if(newSentence){
