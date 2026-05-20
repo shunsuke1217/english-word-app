@@ -23,19 +23,3 @@ export const uploadImage=async(buffer:Buffer,folder:string,name:string)=>{
 
 }
 
-//パスを指定してbucketから画像を消去
-export const deleteImage=async(path:string):Promise<boolean>=>{
-    try{
-    const supabase=await createClient()
-    const {error}=await supabase.storage
-    .from("images")
-    .remove([path])
-    if(!error){
-        return true
-    }else{throw new Error("画像の削除に失敗しました")}
-    }catch(error){
-        console.log(error)
-        return false
-    }
-    
-}
