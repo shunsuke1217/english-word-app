@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
   if (token_hash && type) {
     const supabase = await createClient()
 
+    //届いたotpの確認
     const { error } = await supabase.auth.verifyOtp({
       type,
       token_hash,
