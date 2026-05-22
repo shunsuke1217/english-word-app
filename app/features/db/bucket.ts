@@ -6,7 +6,6 @@ export const uploadImage=async(buffer:Buffer,folder:string,name:string)=>{
     const supabase=await createClient()
     const user=await supabase.auth.getUser()
     if(!user.data.user){
-        console.log("cant get user data")
         return null
     }
     const {data,error}=await supabase.storage
@@ -17,7 +16,6 @@ export const uploadImage=async(buffer:Buffer,folder:string,name:string)=>{
     if(!error){
         return data
     }else{
-        console.log(error)
         return null
     }
 

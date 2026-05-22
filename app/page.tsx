@@ -107,9 +107,6 @@ const UserName = () => {
       const { data, error } = await supabase.auth.getUser()
       if (!error) {
         setName(data.user.user_metadata?.user_name ?? "no-name")
-        console.log(data.user.user_metadata.user_name)
-      } else {
-        console.log(error)
       }
     }
     func()
@@ -184,7 +181,6 @@ const generateSentence = async ({ id, en_word, ja_word }: Word): Promise<Sentenc
 
     //resから例文と例文の画像を受け取る
     const data: { sentence: string, path: string } | null = await res.json()
-    console.log(data?.sentence)//ok
     if (!data) throw new Error("例文のデータを取得できませんでした")
     //dataが取得できた→例文作成完了→isSentenceをtrueにする
     const returnWord = await isSentenceTrue(id)
@@ -194,7 +190,6 @@ const generateSentence = async ({ id, en_word, ja_word }: Word): Promise<Sentenc
     return return_sentence
   }
   catch (error) {
-    console.log(`error: ${error}`)
     return null
   }
 }
@@ -219,7 +214,6 @@ export default function Home() {
   useEffect(() => {
     const initiateWordList = async () => {
       const allData = await getData()
-      console.log(allData)
       if (allData) {
        
         setWord([null,...allData.words])
@@ -252,7 +246,6 @@ export default function Home() {
       }
     }
     catch (error) {
-      console.log(error)
       return null
     }
   }
@@ -268,7 +261,6 @@ export default function Home() {
     if (sentence) {
       return sentence
     } else {
-      console.log("sentenceが見つかりませんでした")
       return sentenceDummy
     }
   }
@@ -374,7 +366,6 @@ export default function Home() {
         </button>
       )
     } else {
-      console.log("削除不可")
       return null
     }
   }
@@ -405,7 +396,6 @@ export default function Home() {
       if (!result) throw new Error("wordの追加に失敗しました")
       setpage(words.length)
     } catch (error) {
-      console.log(error)
       if (image_path) await deleteImage(image_path)
     }
     setLoading(false)
@@ -424,7 +414,6 @@ export default function Home() {
       if (words[page]) words[page].isSentence = true
       setLoading(false)
     } catch (error) {
-      console.log(error)
       if (!word?.isSentence)
         delData(
           word?.id ?? 0,

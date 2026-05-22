@@ -52,7 +52,6 @@ try{
     //ここから例文の後処理
     const sentenceJson=JSON.parse(res.output_text)//JSON→jsオブジェクト
     const sentence=sentenceJson.sentence
-    console.log(sentence)
 
     //ここからbase64データの後処理
     const datasetForImage=res.output.find((element)=>element.type==="image_generation_call")
@@ -71,7 +70,6 @@ try{
     //画像のURL,path,sentence全てResponseで返す
     return NextResponse.json({sentence:sentence,path:path.path})
 }catch(error){
-    console.log(error)
     //datasetFroImageがnullの時のエラー処理
     return NextResponse.json(null)
 }

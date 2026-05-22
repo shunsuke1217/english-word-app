@@ -8,10 +8,8 @@ export const getFromStrage=async(path:string):Promise<string|null>=>{
     .from("images")
     .createSignedUrl(path, 60) 
     if(!data){
-        console.log("cant get data from strage")
         return null
     }
-    console.log(data.signedUrl)
     return data.signedUrl
 }
 
@@ -26,7 +24,6 @@ export const deleteImage=async(path:string):Promise<boolean>=>{
         return true
     }else{throw new Error("画像の削除に失敗しました")}
     }catch(error){
-        console.log(error)
         return false
     }
     

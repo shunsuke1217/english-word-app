@@ -37,7 +37,6 @@ export const POST = async (req: NextRequest) => {
         if(!path)throw new Error("画像のアップロードに失敗しました")
         return NextResponse.json({ path: path.path })
     }catch (error) {
-        console.log(error)
         return NextResponse.json(null)
     }
     

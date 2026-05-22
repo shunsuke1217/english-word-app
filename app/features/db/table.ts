@@ -24,7 +24,6 @@ export const getData=async():Promise<{words:Word[],sentences:Sentence[]}|null>=>
             words.push(element)
             if(element.sentence_list){
                 sentences.push(element.sentence_list)
-                console.log(element.sentence_list)
             }
         } 
         
@@ -33,7 +32,6 @@ export const getData=async():Promise<{words:Word[],sentences:Sentence[]}|null>=>
     return {"words":words,"sentences":sentences}
     }
     catch(error){
-        console.log(error)
         return null
     }
 }
@@ -61,7 +59,6 @@ export const insertWord=async(word:Pick<Word,"en_word"|"ja_word"|"image">):Promi
         throw new Error("データ取得に失敗しました")
     }}
     catch(error){
-        console.log(error)
         return null
     }
 }
@@ -79,13 +76,11 @@ export const insertSentence=async(sentence:Pick<Sentence,"id"|"sentence"|"senten
     .select()
     .single()
     if(data){
-        console.log(data)
         return data
     }else{
         throw new Error("データ取得に失敗しました")
     }}
     catch(error){
-        console.log(error)
         return null
     }
 }
@@ -131,7 +126,6 @@ export const delData=async(ID:number,wordImage:string|null,sentenceImage:string|
         return true
         
     }catch(error){
-        console.log(error)
         return false
     }
 }
@@ -148,7 +142,6 @@ export const isSentenceTrue=async(id:number):Promise<Word|null>=>{
         if(data){return data[0]}
         else{throw new Error("isSentenceTrueの更新に失敗しました")}
     }catch(error){
-        console.log(error,"isSentenceTrueの更新に失敗")
         return null
     }
     
