@@ -18,6 +18,7 @@ export type ReturnText={
     }]
 }
 
+//生成された画像の返り値のデータ構造
 export type CreatedImage={
     "created": number,
   "data": [
