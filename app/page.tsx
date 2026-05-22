@@ -1,7 +1,7 @@
 "use client"
 import { NextResponse } from "next/server"
 import { useState, useEffect, useEffectEvent } from "react"
-import { Sentence, Word } from "@/app/types/types"
+import { DeeplApiResponse, Sentence, Word } from "@/app/types/types"
 import Image from 'next/image'
 import { insertWord, getData, delData, insertSentence, isSentenceTrue } from "./features/db/table"
 import { Database } from "./types/db_types"
@@ -127,9 +127,8 @@ const returnJa = async (en_word: string): Promise<string> => {
       text: en_word
     })
   })
-  //NextResponseのbody部分をjsオブジェクトに変換
-  const resData: string = await res.json()
-  return resData
+  const resData: DeeplApiResponse | null = await res.json()
+  return resData?.ja_word ?? ""
 }
 
 //Wordの画像生成関数
@@ -206,9 +205,7 @@ export default function Home() {
 
   const [sentences, setSentence] = useState<(Sentence | null)[]>([null])
   const [loading, setLoading] = useState<boolean>(true)
-  //supabaseClientの定義
-  const supabase = createClient()
-
+  const [addWordError, setAddWordError] = useState("")
   const sentenceDummy = { id: 0, sentence: "this word dont have a sentence", sentenceImage: "" }
   //最初のレンダリングだけ行う処理
   useEffect(() => {
@@ -246,6 +243,7 @@ export default function Home() {
       }
     }
     catch (error) {
+      console.log(`error: ${error}`)
       return null
     }
   }
@@ -382,21 +380,30 @@ export default function Home() {
 
   const handleAddWord = async () => {
     setLoading(true)
-    let image_path: string | null = inputword
+    setAddWordError("")
+    let image_path: string | null = null
     try {
-      if (!image_path) throw new Error("wordが指定されていません")
+      if (!inputword.trim()) throw new Error("英単語を入力してください")
+
+      const ja_word = await returnJa(inputword)
+      if (!ja_word) throw new Error("日本語訳の取得に失敗しました")
+
       image_path = await generateImage(inputword)
-      if (!image_path) throw new Error("画像の生成に失敗しました")
+      if (!image_path) throw new Error("画像の生成に失敗しました（ログイン状態も確認してください）")
+
       const newWord: Pick<Word, "en_word" | "ja_word" | "image"> = {
         en_word: inputword,
-        ja_word: await returnJa(inputword),
+        ja_word,
         image: image_path,
       }
       const result = await addWord(newWord)
-      if (!result) throw new Error("wordの追加に失敗しました")
+      if (!result) throw new Error("単語の保存に失敗しました")
       setpage(words.length)
     } catch (error) {
       if (image_path) await deleteImage(image_path)
+      setAddWordError(
+        error instanceof Error ? error.message : "単語の追加に失敗しました"
+      )
     }
     setLoading(false)
   }
@@ -504,6 +511,9 @@ export default function Home() {
           <div className="mt-2">
             <UserName />
           </div>
+          {addWordError && (
+            <p className="mt-2 text-center text-sm text-red-600">{addWordError}</p>
+          )}
         </div>
 
         {/* PC: ログイン・入力・追加を水平に。中央列＝ウィンドウ中央 */}
@@ -525,6 +535,11 @@ export default function Home() {
           <div aria-hidden />
           <div aria-hidden />
         </div>
+        {addWordError && (
+          <p className="hidden pb-3 text-center text-sm text-red-600 md:block">
+            {addWordError}
+          </p>
+        )}
       </header>
 
       <main className="flex min-h-0 flex-1 flex-col px-4 py-6 md:px-0 md:py-0">

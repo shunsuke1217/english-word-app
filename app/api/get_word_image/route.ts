@@ -19,8 +19,11 @@ export const POST = async (req: NextRequest) => {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                prompt: `create an image that makes the word ${word} come to mind when you see it.do not include any text`,
-                model: "gpt-image-1-mini",
+                prompt: `Create an image that makes the word "${word}" come to mind when you see it.
+                [Image Creation Rules]:
+                Do not include any text in the image.
+                `,
+                model: "gpt-image-2",
                 quality: "low",
                 n: 1,
                 size: "1024x1024"
