@@ -1,7 +1,15 @@
 export type Word={
+  id:number,//Sentence型と紐づける
   en_word:string,
   ja_word:string,
   image:string,
+  isSentence:boolean
+  
+}
+export type Sentence={
+  id:number,//Word型と紐づける
+  sentence:string,
+  sentenceImage:string,
 }
 export type ReturnText={
     translations:[{
@@ -10,6 +18,7 @@ export type ReturnText={
     }]
 }
 
+//生成された画像の返り値のデータ構造
 export type CreatedImage={
     "created": number,
   "data": [
