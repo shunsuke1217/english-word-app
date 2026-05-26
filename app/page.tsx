@@ -1,17 +1,11 @@
 "use client"
-import { NextResponse } from "next/server"
-import { useState, useEffect, useEffectEvent } from "react"
+import { useState, useEffect } from "react"
 import { Sentence, Word } from "@/app/types/types"
 import Image from 'next/image'
-import { insertWord, getData, delData, insertSentence, isSentenceTrue } from "./features/db/table"
-import { Database } from "./types/db_types"
-import { SupabaseClient } from "@supabase/supabase-js"
+import { insertWord, getData, delData, isSentenceTrue } from "./features/db/table"
 import { createClient } from "@/lib/supabase/client"
-import { uploadImage } from "./features/db/bucket"
 import { getFromStrage, deleteImage } from "@/app/features/db/bucket_sa"
-import { Buffer } from "buffer"
 import Link from "next/link"
-import { set } from "zod"
 
 
 //コンポーネント
@@ -189,7 +183,7 @@ const generateSentence = async ({ id, en_word, ja_word }: Word): Promise<Sentenc
     const return_sentence: Sentence = { id: id, sentence: data.sentence, sentenceImage: data.path }
     return return_sentence
   }
-  catch (error) {
+  catch {
     return null
   }
 }
@@ -245,7 +239,7 @@ export default function Home() {
         throw new Error("newWordを追加できませんでした")
       }
     }
-    catch (error) {
+    catch {
       return null
     }
   }
@@ -395,7 +389,7 @@ export default function Home() {
       const result = await addWord(newWord)
       if (!result) throw new Error("wordの追加に失敗しました")
       setpage(words.length)
-    } catch (error) {
+    } catch {
       if (image_path) await deleteImage(image_path)
     }
     setLoading(false)
@@ -413,7 +407,7 @@ export default function Home() {
       if (!result) throw new Error("例文の追加に失敗しました")
       if (words[page]) words[page].isSentence = true
       setLoading(false)
-    } catch (error) {
+    } catch {
       if (!word?.isSentence)
         delData(
           word?.id ?? 0,

@@ -1,9 +1,6 @@
-import { Word, CreatedImage } from "@/app/types/types";
+import { CreatedImage } from "@/app/types/types";
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import { BaseNextResponse } from "next/dist/server/base-http";
 import { uploadImage } from "@/app/features/db/bucket";
-import { ca } from "zod/locales";
 
 //英単語を送る→画像（buffer形式）を返す
 //bufferやimgファイルをServerActionの関数の引数に設定するとエラー。よって画像を作った時にDBに渡すしかない
@@ -36,7 +33,7 @@ export const POST = async (req: NextRequest) => {
         const path = await uploadImage(buffer, "word_image", word)
         if(!path)throw new Error("画像のアップロードに失敗しました")
         return NextResponse.json({ path: path.path })
-    }catch (error) {
+    }catch {
         return NextResponse.json(null)
     }
     
