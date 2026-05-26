@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# public assets (images stored in Supabase Storage)
+/public/word/
+/public/sentence/
