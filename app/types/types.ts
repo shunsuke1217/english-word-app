@@ -11,11 +11,14 @@ export type Sentence={
   sentence:string,
   sentenceImage:string,
 }
-export type ReturnText={
-    translations:[{
-        detected_source_language:string,
-        text:string
-    }]
+/** POST /api/deepl のリクエスト body */
+export type DeeplRequestBody = {
+  text: string
+}
+
+/** POST /api/deepl の成功レスポンス（OpenAI Structured Outputs と同じ形） */
+export type DeeplApiResponse = {
+  ja_word: string
 }
 
 //生成された画像の返り値のデータ構造
