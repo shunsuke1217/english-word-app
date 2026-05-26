@@ -1,5 +1,5 @@
 jobs:
   my_first_job:
-    name:My First Job
+    name: My First Job
   my_second_job:
-    name:My Second Job
+    name: My Second Job
