@@ -1,0 +1,36 @@
+name: Supabase Backup
+
+on:
+  schedule:
+    - cron: "0 18 * * 0" # 毎週日曜 UTC 18:00（日本時間 月曜 3:00）
+  workflow_dispatch: # 手動実行も可能
+
+jobs:
+  database-backup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Dump database
+        run: |
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          pg_dump "$SUPABASE_DB_URL" \
+            --format=custom \
+            --no-owner \
+            --no-privileges \
+            --file="backup_${TIMESTAMP}.dump"
+          echo "BACKUP_FILE=backup_${TIMESTAMP}.dump" >> "$GITHUB_ENV"
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+
+      - name: Upload backup as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: supabase-db-backup-${{ github.run_id }}
+          path: ${{ env.BACKUP_FILE }}
+          retention-days: 30
+          
