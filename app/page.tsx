@@ -1,5 +1,6 @@
 "use client"
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Sentence, Word } from "@/app/types/types"
 import Image from 'next/image'
 import { insertWord, getData, delData, isSentenceTrue } from "./features/db/table"
@@ -93,20 +94,6 @@ const SentenceCard = ({ sentence, sentenceImage }: Sentence) => {
   )
 }
 
-const UserName = () => {
-  const [name, setName] = useState("")
-  useEffect(() => {
-    const func = async () => {
-      const supabase = createClient()
-      const { data, error } = await supabase.auth.getUser()
-      if (!error) {
-        setName(data.user.user_metadata?.user_name ?? "no-name")
-      }
-    }
-    func()
-  }, [])
-  return <p className="text-sm text-neutral-700">{name}</p>
-}
 
 //ロジック
 //英単語を引数にとって日本語を返す
@@ -200,8 +187,16 @@ export default function Home() {
 
   const [sentences, setSentence] = useState<(Sentence | null)[]>([null])
   const [loading, setLoading] = useState<boolean>(true)
+  const [userName, setUserName] = useState("")
   //supabaseClientの定義
   const supabase = createClient()
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    setUserName("")
+    router.refresh()
+  }
 
   const sentenceDummy = { id: 0, sentence: "this word dont have a sentence", sentenceImage: "" }
   //最初のレンダリングだけ行う処理
@@ -216,7 +211,14 @@ export default function Home() {
         setpage(1)
       }
     }
+    const loadUser = async () => {
+      const { data, error } = await supabase.auth.getUser()
+      if (!error) {
+        setUserName(data.user.user_metadata?.user_name ?? "no-name")
+      }
+    }
     initiateWordList()
+    loadUser()
     setLoading(false)
   }, [])
   //ロジック
@@ -495,8 +497,15 @@ export default function Home() {
             {wordInput}
             {addWordButton}
           </div>
-          <div className="mt-2">
-            <UserName />
+          <div className="mt-2 flex items-center gap-3">
+            <p className="text-sm text-neutral-700">{userName}</p>
+            <button
+              type="button"
+              className="text-sm text-neutral-500 underline hover:text-neutral-800"
+              onClick={handleLogout}
+            >
+              ログアウト
+            </button>
           </div>
         </div>
 
@@ -513,8 +522,15 @@ export default function Home() {
           <div className="flex justify-end">{addWordButton}</div>
         </div>
         <div className={`${pcCenterGrid} hidden pb-4 md:grid`}>
-          <div className="justify-self-start">
-            <UserName />
+          <div className="flex items-center gap-3 justify-self-start">
+            <p className="text-sm text-neutral-700">{userName}</p>
+            <button
+              type="button"
+              className="text-sm text-neutral-500 underline hover:text-neutral-800"
+              onClick={handleLogout}
+            >
+              ログアウト
+            </button>
           </div>
           <div aria-hidden />
           <div aria-hidden />
