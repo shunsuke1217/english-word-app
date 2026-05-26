@@ -16,6 +16,7 @@ const signUpNewUser = async (
     email,
     password,
     options: {
+      //メールのリンクのリダイレクト先　今はクエリでnext設定していない
       emailRedirectTo: `${window.location.origin}/auth/route`,
       data: {
         user_name,

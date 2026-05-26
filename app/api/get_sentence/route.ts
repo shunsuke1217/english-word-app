@@ -19,8 +19,27 @@ try{
     const res=await openai.responses.create(
         {
             model:"gpt-5-nano",
-            input:` Using "${en_word}" as the Japanese meaning “${ja_word}” ,create an example sentence in English.And 
-            create an image illustrating the example sentence. Do not include any text in the image.`,
+            instructions:`You write ONE natural English example sentence for vocabulary learners.
+
+            The English word "${en_word}" can have several Japanese translations. Here, focus ONLY on the sense that matches "${ja_word}" (not other senses of the same English word).
+
+            Your job: show how "${en_word}" is used in a real situation where it means "${ja_word}" — as if the reader already chose this meaning from a list of possible Japanese glosses.
+
+            Rules for the sentence:
+            - Include "${en_word}" exactly once, used naturally in context (not quoted as a vocabulary label).
+            - The situation must clearly fit the meaning "${ja_word}"; avoid senses that would translate differently in Japanese.
+            - One sentence only, 8–20 words, concrete and easy to visualize.
+            - Do NOT explain meanings, mention Japanese, or say "means", "refers to", "in Japanese", "this word", etc.
+
+            Good (word: bank, sense: 銀行 / financial institution):
+            - "She deposited her paycheck at the bank near the station."
+
+            Bad (meta / wrong sense):
+            - "Bank means ginkou in Japanese."
+            - "He sat on the grassy bank of the river." (wrong sense when gloss is 銀行)
+
+            Also create an image that illustrates the example sentence. Image rules: no text in the image; show a specific, easy-to-visualize scene.`,
+            input:`English: ${en_word}\nJapanese sense to illustrate: ${ja_word}`,
             text:{
                 format:{
                     name:"sentenceAndImage",
