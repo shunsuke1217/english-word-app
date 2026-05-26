@@ -14,6 +14,7 @@ import Link from "next/link"
 const cardImageOverlay =
   "pointer-events-none absolute inset-0 z-[1] bg-white/30 backdrop-blur-[2px]"
 
+const supabase = createClient()
 //カード　
 //コンポーネント関数で非同期処理の結果を使いたい時はuseEffectを使う
 //今の場合はstate変更→ページ全体でレンダリング→CardのPropsが変わる→Cardもレンダリング
@@ -188,6 +189,7 @@ export default function Home() {
   const [sentences, setSentence] = useState<(Sentence | null)[]>([null])
   const [loading, setLoading] = useState<boolean>(true)
   const [userName, setUserName] = useState("")
+  const [pageMessage, setPageMessage] = useState("")
   //supabaseClientの定義
   const supabase = createClient()
   const router = useRouter()
@@ -377,6 +379,15 @@ export default function Home() {
     "w-full min-w-0 border border-neutral-800 bg-neutral-200 px-3 py-2 text-center text-sm text-neutral-900 placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-400 md:px-4 md:text-base"
 
   const handleAddWord = async () => {
+    setPageMessage("")
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) {
+      setPageMessage("ログインされていません")
+      return
+    }
+
     setLoading(true)
     let image_path: string | null = inputword
     try {
@@ -538,6 +549,11 @@ export default function Home() {
       </header>
 
       <main className="flex min-h-0 flex-1 flex-col px-4 py-6 md:px-0 md:py-0">
+        {pageMessage && (
+          <p className="mx-auto mb-4 w-full max-w-6xl text-center text-sm text-red-600 md:px-6">
+            {pageMessage}
+          </p>
+        )}
         {/* スマホ */}
         <div className="flex min-h-0 flex-1 flex-col items-center gap-6 md:hidden">
           <div className="flex w-full max-w-6xl flex-col gap-6">
