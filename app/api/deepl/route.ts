@@ -1,5 +1,5 @@
 import {NextResponse,NextRequest} from "next/server"
-import {Word,ReturnText} from "@/app/types/types"
+import {ReturnText} from "@/app/types/types"
 
 
 export const POST=async(req:NextRequest):Promise<NextResponse>=>{
@@ -25,7 +25,7 @@ export const POST=async(req:NextRequest):Promise<NextResponse>=>{
         const resData:ReturnText=await res.json()
         const returnText:string=resData.translations[0].text
         return NextResponse.json(returnText)
-    }catch(error){
+    }catch{
         //エラーが起きたらnullを返す
         return NextResponse.json(null)
     }

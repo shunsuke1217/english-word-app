@@ -3,8 +3,6 @@ import { Word ,Sentence} from "@/app/types/types";
 import { createClient } from "@/lib/supabase/server";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { Database } from "@/app/types/db_types"; 
-import { error } from "console";
-import { create } from "domain";
 import { deleteImage } from "@/app/features/db/bucket_sa";
 //要型注釈
 
@@ -16,8 +14,8 @@ export const getData=async():Promise<{words:Word[],sentences:Sentence[]}|null>=>
     .from("word_list")
     .select("*,sentence_list(*)")
     .order("id",{ascending:true})
-    let words:Word[]=[]
-    let sentences:Sentence[]=[]
+    const words:Word[]=[]
+    const sentences:Sentence[]=[]
     if(!data)throw new Error("データ取得に失敗しました")
     data.map((element)=>{
         if(element){
@@ -31,7 +29,7 @@ export const getData=async():Promise<{words:Word[],sentences:Sentence[]}|null>=>
     if(words.length===0)throw new Error("データがありません")
     return {"words":words,"sentences":sentences}
     }
-    catch(error){
+    catch{
         return null
     }
 }
@@ -58,7 +56,7 @@ export const insertWord=async(word:Pick<Word,"en_word"|"ja_word"|"image">):Promi
     }else{
         throw new Error("データ取得に失敗しました")
     }}
-    catch(error){
+    catch{
         return null
     }
 }
@@ -80,7 +78,7 @@ export const insertSentence=async(sentence:Pick<Sentence,"id"|"sentence"|"senten
     }else{
         throw new Error("データ取得に失敗しました")
     }}
-    catch(error){
+    catch{
         return null
     }
 }
@@ -125,7 +123,7 @@ export const delData=async(ID:number,wordImage:string|null,sentenceImage:string|
         }
         return true
         
-    }catch(error){
+    }catch{
         return false
     }
 }
@@ -134,14 +132,14 @@ export const delData=async(ID:number,wordImage:string|null,sentenceImage:string|
 export const isSentenceTrue=async(id:number):Promise<Word|null>=>{
     try{
         const supabase=await createClient()
-        const {data,error}=await supabase
+        const {data}=await supabase
         .from("word_list")
         .update({isSentence:true})
         .eq("id",id)
         .select()
         if(data){return data[0]}
         else{throw new Error("isSentenceTrueの更新に失敗しました")}
-    }catch(error){
+    }catch{
         return null
     }
     

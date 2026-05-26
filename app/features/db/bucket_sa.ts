@@ -23,7 +23,7 @@ export const deleteImage=async(path:string):Promise<boolean>=>{
     if(!error){
         return true
     }else{throw new Error("画像の削除に失敗しました")}
-    }catch(error){
+    }catch{
         return false
     }
     

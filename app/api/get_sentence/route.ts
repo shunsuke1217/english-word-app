@@ -1,10 +1,8 @@
 import { NextRequest,NextResponse } from "next/server";
-import { Word,Sentence } from "@/app/types/types";
+import { Word } from "@/app/types/types";
 import OpenAI from "openai";
 import * as z from "zod"
-import fs from "fs"
 import { uploadImage} from "@/app/features/db/bucket";
-import { CreatedImage } from "@/app/types/types";
 import { insertSentence} from "@/app/features/db/table";
 
 const openai=new OpenAI()
@@ -14,8 +12,6 @@ const ReturnSchema=z.object({
 })
 
 export const POST=async(req:NextRequest):Promise<NextResponse<{sentence:string,path:string}|null>>=>{
-    let sentenceImage:string|null=null
-    let id:number=-1
 try{
     const {en_word,ja_word,id}=await req.json() as Pick<Word,"en_word"|"ja_word"|"id">
     
@@ -61,7 +57,6 @@ try{
 
     //画像アップロード
     const path=await uploadImage(buffer,"sentence_image",en_word)
-    sentenceImage=path?.path??null
     if(!path)throw new Error("画像のアップロードに失敗しました")
 
     //例文と画像のpathをDBに保存
@@ -69,7 +64,7 @@ try{
     if(!newSentence)throw new Error("例文のDBへのアップロードに失敗しました")
     //画像のURL,path,sentence全てResponseで返す
     return NextResponse.json({sentence:sentence,path:path.path})
-}catch(error){
+}catch{
     //datasetFroImageがnullの時のエラー処理
     return NextResponse.json(null)
 }
