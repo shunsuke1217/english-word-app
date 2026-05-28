@@ -83,6 +83,7 @@ const SentenceCard = ({ sentence, sentenceImage }: Sentence) => {
           src={url}
           fill
           alt="sentence image"
+          priority
           sizes="(max-width: 768px) 100vw, 28rem"
           className="object-cover"
         />
@@ -196,7 +197,15 @@ export default function Home() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
+    // ログアウト後にUI側の状態も初期化して、未ログイン表示に即座に切り替える
     setUserName("")
+    setPageMessage("")
+    setAddWordError("")
+    setInputWord("")
+    setpage(0)
+    setWord([null])
+    setSentence([null])
+    setLoading(false)
     router.refresh()
   }
 
@@ -521,7 +530,8 @@ export default function Home() {
             <p className="text-sm text-neutral-700">{userName}</p>
             <button
               type="button"
-              className="text-sm text-neutral-500 underline hover:text-neutral-800"
+              disabled={loading}
+              className="text-sm text-neutral-500 underline hover:text-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
               onClick={handleLogout}
             >
               ログアウト
@@ -549,7 +559,8 @@ export default function Home() {
             <p className="text-sm text-neutral-700">{userName}</p>
             <button
               type="button"
-              className="text-sm text-neutral-500 underline hover:text-neutral-800"
+              disabled={loading}
+              className="text-sm text-neutral-500 underline hover:text-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
               onClick={handleLogout}
             >
               ログアウト

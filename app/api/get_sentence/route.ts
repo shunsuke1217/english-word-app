@@ -56,7 +56,7 @@ try{
                 moderation:"low",//過度な表現の規制
                 quality:"low",
                 output_format:"webp",
-                output_compression:0,
+                output_compression:35,
 
             }],
 

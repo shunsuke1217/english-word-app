@@ -1,6 +1,8 @@
-import { CreatedImage } from "@/app/types/types";
 import { NextRequest, NextResponse } from "next/server";
 import { uploadImage } from "@/app/features/db/bucket";
+import OpenAI from "openai";
+
+const openai = new OpenAI()
 
 //英単語を送る→画像（buffer形式）を返す
 //bufferやimgファイルをServerActionの関数の引数に設定するとエラー。よって画像を作った時にDBに渡すしかない
@@ -9,29 +11,37 @@ export const POST = async (req: NextRequest) => {
     try {
         //NextRequestのbody部分を取得
         const { word }: { word: string } = await req.json()
-        const res = await fetch("https://api.openai.com/v1/images/generations", {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                prompt: `Create an image that makes the word "${word}" come to mind when you see it.
-                [Image Creation Rules]:
-                Do not include any text in the image.
-                `,
-                model: "gpt-image-2",
-                quality: "low",
-                n: 1,
-                size: "1024x1024"
-            })
+        if (!word?.trim()) throw new Error("word is required")
 
+        // 画像生成（Responses API + image_generation tool）
+        const res = await openai.responses.create({
+            model: "gpt-5-nano",
+            instructions: `Create an image that makes the word "${word}" come to mind when you see it.
+Rules:
+- Do not include any text in the image.`,
+            input: word,
+            tools: [
+                {
+                    model: "gpt-image-1-mini",
+                    action: "generate",
+                    type: "image_generation",
+                    size: "1024x1024",
+                    moderation: "low",
+                    quality: "low",
+                    output_format: "webp",
+                    output_compression: 35,
+                },
+            ],
         })
-        //返ってきたデータのbody部分をResponseからjsオブジェクトにする
-        const returnedData: CreatedImage = await res.json()
-        const b_64Data: string = returnedData.data[0].b64_json
-        //base64データをbufferに変換
-        const buffer = Buffer.from(b_64Data, "base64")
+
+        const datasetForImage = res.output.find(
+            (element) => element.type === "image_generation_call"
+        )
+        if (!datasetForImage || !datasetForImage.result) {
+            throw new Error("画像生成のデータが見つかりませんでした")
+        }
+        const buffer = Buffer.from(datasetForImage.result, "base64")
+
         //画像のアップロード
         const path = await uploadImage(buffer, "word_image", word)
         if(!path)throw new Error("画像のアップロードに失敗しました")
