@@ -17,7 +17,7 @@ const signUpNewUser = async (
     password,
     options: {
       //メールのリンクのリダイレクト先　今はクエリでnext設定していない
-      emailRedirectTo: `${window.location.origin}/auth/route`,
+      emailRedirectTo: `https://image-english.com/auth/route`,
       data: {
         user_name,
       },
