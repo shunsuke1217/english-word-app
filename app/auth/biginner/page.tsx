@@ -39,7 +39,7 @@ const getSignUpErrorMessage = (error: AuthError): string => {
   if (msg.includes("redirect")) {
     return "認証設定（リダイレクトURL）に問題があります。管理者にお問い合わせください"
   }
-
+  console.log(error.message)
   return "登録に失敗しました。入力内容を確認して再度お試しください"
 }
 
@@ -70,7 +70,7 @@ export default function SignUpPage() {
   const [errorMessage, setErrorMessage] = useState("")
   const router = useRouter()
 
-  const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSignUp = async (e: React.SubmitEvent<HTMLFormElement>) => {
     //handleSingUp発生時はブラウザの標準フォーム送信や更新を止める
     e.preventDefault()
     setErrorMessage("")
