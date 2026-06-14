@@ -1,35 +1,56 @@
-import { type EmailOtpType } from '@supabase/supabase-js'
-import { redirect } from 'next/navigation'
-import { type NextRequest } from 'next/server'
+import { type EmailOtpType } from "@supabase/supabase-js"
+import { redirect } from "next/navigation"
+import { type NextRequest } from "next/server"
 
-import { createClient } from '@/lib/supabase/server'
+import { deleteUnconfirmedUserByEmail } from "@/lib/supabase/admin"
+import { createClient } from "@/lib/supabase/server"
 
-//顧客emailからGETリクエストがくる
+function safeRedirectPath(next: string | null, fallback = "/auth"): string {
+  if (!next || !next.startsWith("/") || next.startsWith("//")) {
+    return fallback
+  }
+  return next
+}
+
+async function cleanupFailedSignup(email: string | null, type: string | null) {
+  if (type === "signup" && email) {
+    await deleteUnconfirmedUserByEmail(email)
+  }
+}
+
+// 顧客emailからGETリクエストがくる
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
-  const token_hash = searchParams.get('token_hash')
+  const token_hash = searchParams.get("token_hash")
+  const code = searchParams.get("code")
+  const type = searchParams.get("type") as EmailOtpType | null
+  const email = searchParams.get("email")
+  const next = safeRedirectPath(searchParams.get("next"))
 
-  //なんのためのtokenかを識別するためにtypeが必要
-  const type = searchParams.get('type') as EmailOtpType | null
-  
-  //この'next'はauth/page.tsxでemailRedirectToで指定したリダイレクト先
-  const next = searchParams.get('next') ?? '/auth/confirm'
+  const supabase = await createClient()
 
+  // PKCE flow（新しい確認メールリンク）
+  if (code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    if (!error) {
+      redirect(next)
+    }
+    await cleanupFailedSignup(email, type ?? "signup")
+    redirect("/auth/auth-code-error")
+  }
+
+  // token_hash flow（従来の確認メールリンク）
   if (token_hash && type) {
-    const supabase = await createClient()
-
-    //届いたotpの確認
     const { error } = await supabase.auth.verifyOtp({
       type,
       token_hash,
     })
-    console.log(error?.message)
     if (!error) {
-      // redirect user to specified redirect URL or root of app
       redirect(next)
     }
+    await cleanupFailedSignup(email, type)
+    redirect("/auth/auth-code-error")
   }
-  
-  // redirect the user to an error page with some instructions
-  redirect('/auth/auth-code-error')
+
+  redirect("/auth/auth-code-error")
 }

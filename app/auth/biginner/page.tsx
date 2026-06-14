@@ -53,7 +53,7 @@ const signUpNewUser = async (
     password,
     options: {
       //メールのリンクのリダイレクト先　今はクエリでnext設定していない
-      emailRedirectTo: `https://image-english.com/auth/route`,
+      emailRedirectTo: `https://image-english.com/auth/route?email=${encodeURIComponent(email.trim())}`,
       data: {
         user_name,
       },
@@ -70,7 +70,7 @@ export default function SignUpPage() {
   const [errorMessage, setErrorMessage] = useState("")
   const router = useRouter()
 
-  const handleSignUp = async (e: React.SubmitEvent<HTMLFormElement>) => {
+  const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     //handleSingUp発生時はブラウザの標準フォーム送信や更新を止める
     e.preventDefault()
     setErrorMessage("")
