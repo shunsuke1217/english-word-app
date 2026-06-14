@@ -1,11 +1,47 @@
 "use client"
 
 import { useState } from "react"
+import type { AuthError } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 
 const supabase = createClient()
+
+const getSignUpErrorMessage = (error: AuthError): string => {
+  const msg = error.message.toLowerCase()
+
+  if (
+    error.code === "user_already_exists" ||
+    msg.includes("already registered") ||
+    msg.includes("already been registered")
+  ) {
+    return "このメールアドレスは既に登録されています"
+  }
+  if (
+    msg.includes("password") &&
+    (msg.includes("at least") || msg.includes("short") || msg.includes("weak"))
+  ) {
+    return "パスワードは6文字以上にしてください"
+  }
+  if (msg.includes("invalid") && msg.includes("email")) {
+    return "メールアドレスの形式が正しくありません"
+  }
+  if (msg.includes("rate limit") || msg.includes("too many requests")) {
+    return "リクエストが多すぎます。しばらく時間をおいてからお試しください"
+  }
+  if (msg.includes("security purposes") || msg.includes("only request this after")) {
+    return "確認メールの送信はしばらく待ってからお試しください"
+  }
+  if (msg.includes("signup") && msg.includes("disabled")) {
+    return "新規登録は現在受け付けていません"
+  }
+  if (msg.includes("redirect")) {
+    return "認証設定（リダイレクトURL）に問題があります。管理者にお問い合わせください"
+  }
+
+  return "登録に失敗しました。入力内容を確認して再度お試しください"
+}
 
 const signUpNewUser = async (
   email: string,
@@ -34,7 +70,7 @@ export default function SignUpPage() {
   const [errorMessage, setErrorMessage] = useState("")
   const router = useRouter()
 
-  const handleSignUp = async (e: React.SubmitEvent<HTMLFormElement>) => {
+  const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     //handleSingUp発生時はブラウザの標準フォーム送信や更新を止める
     e.preventDefault()
     setErrorMessage("")
@@ -45,7 +81,7 @@ export default function SignUpPage() {
       //初めての人が入力後、すぐに飛ぶ場所（クエリをつけるつけないはここで決める）
       router.push(`/auth/confirm?email=${encodeURIComponent(email)}`)
     } else {
-      setErrorMessage(error.message)
+      setErrorMessage(getSignUpErrorMessage(error))
     }
   }
 
@@ -116,7 +152,7 @@ export default function SignUpPage() {
 
         {errorMessage && (
           <p className="w-full text-center text-sm text-red-600">
-            {errorMessage}
+        {errorMessage}
           </p>
         )}
       </div>
